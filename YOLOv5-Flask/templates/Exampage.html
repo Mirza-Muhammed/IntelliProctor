@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block head %} 
+    <title>Exam Page</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Custom CSS can be added here */
+        body {
+            background-color: #ffffff; /* Light background color */
+            color: #343a40; /* Text color */
+        }
+        .container {
+            padding: 20px;
+            max-width: 600px;
+            position: relative; /* Added position relative */
+        }
+        .question-paper {
+            margin-top: 20px;
+            text-align: left;
+        }
+        .question-paper h2 {
+            margin-bottom: 10px;
+        }
+        .question-paper h3 {
+            margin-top: 20px;
+        }
+        .question-paper p {
+            margin-bottom: 10px;
+        }
+        .question-paper ul {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .question-paper li {
+            list-style-type: none;
+            margin-bottom: 5px;
+        }
+        .navbar {
+            background-color: #343a40 !important; /* Navbar background color */
+            height: 80px; /* Larger navbar height */
+        }
+        .navbar-brand {
+            position: absolute;
+            width: 100%;
+            left: 0;
+            text-align: center;
+            margin: auto;
+            color: #ffffff; /* Navbar title text color */
+        }
+        .toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+}
+
+    </style>
+{% endblock %}
+
+{% block body %} 
+<nav class="navbar navbar-expand-lg">
+  <span class="navbar-brand h1">Student's Exam Portal</span>
+</nav>
+
+<div class="container text-center">
+    <!-- Add some space between buttons -->
+    <div class="my-3"></div>
+    <button class="btn btn-secondary" onclick="location.href='/closecam'">
+        Stop Exam
+    </button>
+    
+    <!-- Check if the student is not involved in malpractice -->
+    {% if student.malpractice == False %}
+
+        <div class="question-paper">
+            <h2>Question Paper</h2>
+
+            <form id="addQuestionForm" method="POST" action="/submit_answers/{{ rollno }}">
+                {% for question in questions %}
+                <p>{{ question.question }}</p>
+                <input type="text" name="answer" placeholder="Answer" required>
+                {% endfor %}
+                <button type="submit">Submit Answer</button>
+            </form>
+        </div>
+    {% else %}
+        <!-- Display a message if the student is involved in malpractice -->
+        <div class="alert alert-danger" role="alert">
+            You have been flagged for malpractice and cannot take the exam.
+        </div>
+    {% endif %}
+
+    <!-- Add a toast message when malpractice is detected -->
+    <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-delay="5000">
+        <div class="toast-header">
+            <strong class="mr-auto">Malpractice Detected</strong>
+            <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="toast-body">
+            You have been flagged for malpractice and cannot take the exam.
+        </div>
+    </div>
+</div>
+
+<script>
+    // Function to check malpractice status periodically
+    function checkMalpractice() {
+        fetch('/check_malpractice/{{ rollno }}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.malpractice) {
+                    var toast = document.querySelector('.toast');
+                    var toastElement = new bootstrap.Toast(toast);
+                    toastElement.show();
+
+                    // Automatically redirect after 5 seconds
+                    setTimeout(function() {
+                        window.location.href = '/closecam';
+                    }, 5000);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    // Check malpractice status every 2 seconds
+    setInterval(checkMalpractice, 2000);
+</script>
+
+
+
+
+{% endblock %}
